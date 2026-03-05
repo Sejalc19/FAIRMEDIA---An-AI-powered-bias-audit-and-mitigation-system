@@ -1,10 +1,21 @@
-def calculate_fairness(bias_score, original_score):
+def calculate_risk(bias_score):
 
-    fairness_adjusted_score = original_score - (bias_score * 0.5)
+    if bias_score > 0.75:
+        risk_level = "HIGH"
+        review_required = True
 
-    if fairness_adjusted_score < 0:
-        fairness_adjusted_score = 0
+    elif bias_score > 0.4:
+        risk_level = "MEDIUM"
+        review_required = True
+
+    else:
+        risk_level = "LOW"
+        review_required = False
 
     return {
-        "fairness_score": round(fairness_adjusted_score, 2)
+        "risk_level": risk_level,
+        "review_required": review_required
     }
+if __name__ == "__main__":
+    result = calculate_risk(0.7)
+    print(result)

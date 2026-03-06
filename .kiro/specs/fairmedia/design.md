@@ -15,9 +15,24 @@ The architecture follows a modular design with clear separation between bias det
 
 ## Architecture
 
-The system follows a microservices-inspired architecture with the following major components:
+The system follows a modern full-stack architecture with React frontend and Python backend:
 
 ```
+┌─────────────────────────────────────────────────────────────┐
+│                   React Frontend (SPA)                       │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
+│  │  Dashboard   │  │Review Panel  │  │ Audit Logs   │     │
+│  │  Components  │  │  Components  │  │  Components  │     │
+│  └──────────────┘  └──────────────┘  └──────────────┘     │
+│         │                  │                  │             │
+│         └──────────────────┴──────────────────┘             │
+│                            │                                 │
+│                    React Router + State Mgmt                │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                         REST API (JSON)
+                              │
+                              ▼
 ┌─────────────────────────────────────────────────────────────┐
 │                     API Gateway Layer                        │
 │              (Authentication, Rate Limiting)                 │
@@ -36,8 +51,8 @@ The system follows a microservices-inspired architecture with the following majo
 ┌─────────────────────────────────────────────────────────────┐
 │                    Mitigation Layer                          │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
-│  │  Re-weighting│  │    Human     │  │   Decision   │     │
-│  │    Module    │  │   Review UI  │  │    Logger    │     │
+│  │  Re-weighting│  │   Backend    │  │   Decision   │     │
+│  │    Module    │  │  Review API  │  │    Logger    │     │
 │  └──────────────┘  └──────────────┘  └──────────────┘     │
 └─────────────────────────────────────────────────────────────┘
                               │
@@ -53,14 +68,21 @@ The system follows a microservices-inspired architecture with the following majo
 
 **Component Responsibilities:**
 
-1. **API Gateway**: Handles authentication, authorization, rate limiting, and request routing
-2. **Language Detection**: Identifies the language of input content
-3. **Bias Detection**: ML/NLP models that identify bias patterns
-4. **Explainability Engine**: Generates human-readable explanations using attention mechanisms
-5. **Re-weighting Module**: Calculates adjustment weights using ML techniques
-6. **Human Review UI**: Web interface for reviewers to approve/reject mitigation
-7. **Decision Logger**: Records all decisions for audit and model improvement
-8. **Storage Layer**: Persists content, reports, and audit trails
+1. **React Frontend**: Single-page application providing interactive UI for reviewers
+2. **API Gateway**: Handles authentication, authorization, rate limiting, and request routing
+3. **Language Detection**: Identifies the language of input content
+4. **Bias Detection**: ML/NLP models that identify bias patterns
+5. **Explainability Engine**: Generates human-readable explanations using attention mechanisms
+6. **Re-weighting Module**: Calculates adjustment weights using ML techniques
+7. **Backend Review API**: REST endpoints for review workflow operations
+8. **Decision Logger**: Records all decisions for audit and model improvement
+9. **Storage Layer**: Persists content, reports, and audit trails
+
+**Frontend-Backend Communication**:
+- RESTful API with JSON payloads
+- JWT-based authentication
+- WebSocket support for real-time updates (optional)
+- CORS configuration for local development
 
 ## Components and Interfaces
 
@@ -256,9 +278,9 @@ where α is a learned sensitivity parameter (0 < α < 1)
 
 ### 6. Human Review Interface
 
-**Purpose**: Web UI for human reviewers to approve/reject mitigation actions.
+**Purpose**: React-based web UI for human reviewers to approve/reject mitigation actions.
 
-**Interface**:
+**Backend API Interface**:
 ```python
 class ReviewInterface:
     def get_pending_reviews(reviewer: User) -> List[ReviewTask]:
@@ -288,12 +310,143 @@ class Decision:
     timestamp: datetime
 ```
 
-**UI Components**:
-- Dashboard: Queue of pending reviews, sorted by priority
-- Review Panel: Side-by-side view of content and bias report
-- Explanation View: Interactive visualization of bias evidence
-- Decision Controls: Approve/Reject buttons with notes field
-- Impact Preview: Shows effect of mitigation on content distribution
+**React Frontend Architecture**:
+
+**Technology Stack**:
+- React 18+ with functional components and hooks
+- React Router for navigation
+- Axios for API communication
+- Context API or Redux for state management
+- Material-UI or Tailwind CSS for component library
+- React Query for server state management and caching
+
+**Component Structure**:
+```
+src/
+├── components/
+│   ├── Dashboard/
+│   │   ├── ReviewQueue.jsx          # List of pending reviews
+│   │   ├── ReviewCard.jsx           # Individual review item
+│   │   └── PriorityFilter.jsx       # Filter by priority
+│   ├── ReviewPanel/
+│   │   ├── ContentView.jsx          # Display content preview
+│   │   ├── BiasReportView.jsx       # Show bias analysis
+│   │   ├── HighlightedText.jsx      # Text with bias highlights
+│   │   └── DecisionControls.jsx     # Approve/Reject buttons
+│   ├── Visualization/
+│   │   ├── BiasScoreChart.jsx       # Visual bias score display
+│   │   ├── ImpactPreview.jsx        # Distribution impact chart
+│   │   └── EvidenceHighlighter.jsx  # Interactive span highlights
+│   └── Common/
+│       ├── Header.jsx
+│       ├── Sidebar.jsx
+│       └── LoadingSpinner.jsx
+├── pages/
+│   ├── DashboardPage.jsx
+│   ├── ReviewPage.jsx
+│   ├── AuditLogPage.jsx
+│   └── LoginPage.jsx
+├── hooks/
+│   ├── useReviewTasks.js            # Fetch and manage review tasks
+│   ├── useSubmitDecision.js         # Submit reviewer decisions
+│   └── useAuth.js                   # Authentication state
+├── context/
+│   ├── AuthContext.jsx              # User authentication state
+│   └── ReviewContext.jsx            # Review workflow state
+├── services/
+│   └── api.js                       # API client configuration
+└── utils/
+    ├── formatters.js                # Data formatting utilities
+    └── validators.js                # Input validation
+```
+
+**Key React Components**:
+
+1. **Dashboard Component**:
+   - Displays queue of pending reviews with real-time updates
+   - Filters by priority (high/medium/low)
+   - Pagination for large review lists
+   - Uses React Query for automatic refetching
+
+2. **Review Panel Component**:
+   - Split-pane layout: content on left, bias report on right
+   - Responsive design for mobile/tablet
+   - Real-time form validation
+   - Optimistic UI updates on decision submission
+
+3. **Bias Visualization Component**:
+   - Interactive text highlighting with tooltips
+   - D3.js or Recharts for bias score charts
+   - Color-coded severity indicators
+   - Expandable explanation sections
+
+4. **Decision Controls Component**:
+   - Approve/Reject/Modify action buttons
+   - Text area for reviewer notes
+   - Weight adjustment sliders (for modify action)
+   - Confirmation dialogs for critical actions
+
+**State Management**:
+```javascript
+// Global state structure
+{
+  auth: {
+    user: User,
+    token: string,
+    isAuthenticated: boolean
+  },
+  reviews: {
+    pending: ReviewTask[],
+    current: ReviewTask | null,
+    filters: { priority: string, status: string }
+  },
+  ui: {
+    loading: boolean,
+    error: string | null,
+    notifications: Notification[]
+  }
+}
+```
+
+**API Integration Pattern**:
+```javascript
+// Example: useReviewTasks hook
+import { useQuery, useMutation, useQueryClient } from 'react-query';
+import api from '../services/api';
+
+export const useReviewTasks = (filters) => {
+  return useQuery(
+    ['reviewTasks', filters],
+    () => api.get('/api/reviews/pending', { params: filters }),
+    { refetchInterval: 30000 } // Auto-refresh every 30s
+  );
+};
+
+export const useSubmitDecision = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation(
+    (decision) => api.post('/api/reviews/decision', decision),
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries('reviewTasks');
+      }
+    }
+  );
+};
+```
+
+**Routing Structure**:
+```javascript
+<Routes>
+  <Route path="/login" element={<LoginPage />} />
+  <Route path="/" element={<ProtectedRoute />}>
+    <Route path="dashboard" element={<DashboardPage />} />
+    <Route path="review/:taskId" element={<ReviewPage />} />
+    <Route path="audit" element={<AuditLogPage />} />
+  </Route>
+</Routes>
+```
 
 ### 7. Decision Logger
 

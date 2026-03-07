@@ -87,22 +87,120 @@ function ContentAnalyzer() {
   }
 
   const generateAlternativeText = (originalText, highlightedSpans) => {
-    if (!highlightedSpans || highlightedSpans.length === 0) {
-      return originalText
+    if (!originalText) return originalText
+
+    // Master dictionary of ALL biased phrases → neutral replacements
+    // This runs entirely in the frontend so it works regardless of
+    // what the backend passes back in highlighted_text
+    const BIAS_REPLACEMENTS = {
+      // Multi-word phrases first (these must come before single words)
+      "women belong in the kitchen": "people can work in any field",
+      "women belong in supportive positions": "people can work in any role",
+      "men are the natural leaders": "people of all genders can lead",
+      "men are natural leaders": "people of all genders can lead",
+      "natural leaders": "capable leaders",
+      "natural leader": "capable leader",
+      "boys will be boys": "children should be held to equal standards",
+      "boys don't cry": "it's okay to express emotions",
+      "man of the house": "head of household",
+      "man up": "be courageous",
+      "be a man": "be strong",
+      "man's job": "anyone's job",
+      "woman's place": "anyone's place",
+      "like a girl": "with effort",
+      "throw like a girl": "throw with less force",
+      "weaker sex": "all people",
+      "lady doctor": "doctor",
+      "lady engineer": "engineer",
+      "lady scientist": "scientist",
+      "lady lawyer": "lawyer",
+      "male nurse": "nurse",
+      "working mother": "working parent",
+      "career woman": "professional",
+      "old maid": "unmarried person",
+      "men are better at": "individuals vary in their abilities with",
+      "women are too emotional": "all people experience emotions",
+      "men are naturally": "individuals can be naturally",
+      "women are naturally": "individuals can be naturally",
+      "girls should": "all people should",
+      "real men": "people",
+      "crumble under stress": "struggle under pressure",
+      "built for high-pressure": "suited for demanding",
+      "supportive positions": "various roles",
+      "breadwinners": "providers",
+      "breadwinner": "provider",
+      "prioritize family over deadlines": "balance personal and professional priorities",
+      // Single words
+      "chairman": "chairperson",
+      "fireman": "firefighter",
+      "policeman": "police officer",
+      "businessman": "businessperson",
+      "spokesman": "spokesperson",
+      "mailman": "mail carrier",
+      "cameraman": "camera operator",
+      "salesman": "salesperson",
+      "foreman": "supervisor",
+      "mankind": "humankind",
+      "manpower": "workforce",
+      "housewife": "homemaker",
+      "tomboy": "active child",
+      "emotional": "expressive",
+      "hysterical": "upset",
+      "nurturing": "caring",
+      "ditzy": "thoughtful",
+      "nagging": "persistent",
+      "catfight": "disagreement",
+      "aggressive": "assertive",
+      "dominant": "leading",
+      "stubborn": "persistent",
+      // Hindi phrases
+      "औरतों का काम": "घर का काम",
+      "मर्दानगी": "साहस",
+      "पराया धन": "बेटी",
+      "पति परमेश्वर": "जीवन साथी",
+      "कमजोर लिंग": "व्यक्ति",
+      "अबला नारी": "महिला",
+      "लड़के रोते नहीं": "भावनाएं स्वाभाविक हैं",
+      "मर्द को दर्द नहीं होता": "सभी को दर्द होता है",
     }
 
     let altText = originalText
-    // Sort spans by start position in reverse to replace from end to start
-    const sortedSpans = [...highlightedSpans].sort((a, b) => b.span[0] - a.span[0])
-    
-    sortedSpans.forEach(span => {
-      if (span.suggestion) {
-        const before = altText.substring(0, span.span[0])
-        const after = altText.substring(span.span[1])
-        altText = before + span.suggestion + after
-      }
+
+    // Step 1: Apply dictionary replacements
+    // Sorted longest-first so "natural leaders" is caught before "leaders"
+    const sortedPhrases = Object.keys(BIAS_REPLACEMENTS)
+      .sort((a, b) => b.length - a.length)
+
+    sortedPhrases.forEach(phrase => {
+      const replacement = BIAS_REPLACEMENTS[phrase]
+      // Case-insensitive replace, preserve original capitalisation
+      const regex = new RegExp(
+        phrase.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+        'gi'
+      )
+      altText = altText.replace(regex, (match) => {
+        if (match === match.toUpperCase()) return replacement.toUpperCase()
+        if (match[0] === match[0].toUpperCase()) {
+          return replacement[0].toUpperCase() + replacement.slice(1)
+        }
+        return replacement
+      })
     })
-    
+
+    // Step 2: Also apply any suggestions from backend spans
+    // (handles cases not in our dictionary)
+    if (highlightedSpans && highlightedSpans.length > 0) {
+      highlightedSpans.forEach(span => {
+        if (span.suggestion && span.text) {
+          const regex = new RegExp(
+            span.text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
+            'gi'
+          )
+          altText = altText.replace(regex, span.suggestion)
+        }
+      })
+    }
+
     return altText
   }
 

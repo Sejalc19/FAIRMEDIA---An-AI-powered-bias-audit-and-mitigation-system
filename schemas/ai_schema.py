@@ -86,6 +86,12 @@ class HighlightedSpan(BaseModel):
         description="How much this span contributes to overall bias",
         examples=[0.15]
     )
+    
+    suggestion: Optional[str] = Field(
+        None,
+        description="Alternative neutral text suggestion",
+        examples=["their"]
+    )
 
 
 class AIAnalysisResult(BaseModel):

@@ -14,7 +14,12 @@ class Settings(BaseSettings):
     API_HOST: str = "0.0.0.0"
     API_PORT: int = 8000
     API_RELOAD: bool = True
-    ALLOWED_ORIGINS: List[str] = ["http://localhost:8501"]
+    ALLOWED_ORIGINS: List[str] = [
+        "http://localhost:3000",  # React frontend
+        "http://localhost:8501",  # Streamlit (legacy)
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:8501"
+    ]
     
     # Storage Configuration
     STORAGE_MODE: str = "local"  # "local" or "aws"

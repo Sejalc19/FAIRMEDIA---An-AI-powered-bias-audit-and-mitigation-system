@@ -1,7 +1,7 @@
 """
-API route handlers package.
+API routes package.
 """
 
+from backend.routes import analyze
 
-
-__all__ = ["analyze"]
+__all__ = ['analyze']

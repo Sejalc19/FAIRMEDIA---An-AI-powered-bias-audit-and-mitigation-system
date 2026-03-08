@@ -112,17 +112,27 @@ function AuditReports() {
                   </div>
                 </div>
                 <div className="mt-3">
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className={`h-2 rounded-full ${
-                        metric.status === 'excellent' ? 'bg-green-500' :
-                        metric.status === 'good' ? 'bg-blue-500' :
-                        metric.status === 'warning' ? 'bg-yellow-500' : 'bg-red-500'
-                      }`}
-                      style={{ width: `${(metric.value / metric.target) * 100}%` }}
-                    ></div>
-                  </div>
-                </div>
+  <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+    <div
+      className={`h-2 rounded-full ${
+        metric.status === 'excellent'
+          ? 'bg-green-500'
+          : metric.status === 'good'
+          ? 'bg-blue-500'
+          : metric.status === 'warning'
+          ? 'bg-yellow-500'
+          : 'bg-red-500'
+      }`}
+      style={{
+        width: `${Math.min(
+          100,
+          Math.max(0, (metric.value / metric.target) * 100)
+        )}%`,
+      }}
+    />
+  </div>
+</div>
+
               </div>
             ))}
           </div>
